@@ -402,7 +402,7 @@
         PSSpecifier *hideElementButton = [self newSwitchCellWithTitle:@"Show/Hide UI button" detailTitle:@"A button on the main page to remove UI elements" key:@"remove_elements_button" defaultValue:true changeAction:nil];
         PSSpecifier *copyVideoDecription = [self newSwitchCellWithTitle:@"Copy video decription" detailTitle:@"Show new option in long press to copy the video decription" key:@"copy_decription" defaultValue:true changeAction:nil];
         PSSpecifier *copyVideoLink = [self newSwitchCellWithTitle:@"Copy video link" detailTitle:@"Show new option in long press to copy the video link" key:@"copy_video_link" defaultValue:true changeAction:nil];
-        PSSpecifier *copyMusicLink = [self newSwitchCellWithTitle:@"Copy Music link" detailTitle:@"Show new option in long press to copy the video link" key:@"copy_music_link" defaultValue:true changeAction:nil];
+        PSSpecifier *copyMusicLink = [self newSwitchCellWithTitle:@"Copy Music link" detailTitle:@"Show new option in long press to copy the music link" key:@"copy_music_link" defaultValue:true changeAction:nil];
         PSSpecifier *autoPlay = [self newSwitchCellWithTitle:@"Auto Play Next Video" detailTitle:@"Play next video automatcilly when the post is finished" key:@"auto_play" defaultValue:false changeAction:nil];
         PSSpecifier *progressBar = [self newSwitchCellWithTitle:@"Show progress bar" detailTitle:nil key:@"show_porgress_bar" defaultValue:true changeAction:nil];
         PSSpecifier *likeConfirmation = [self newSwitchCellWithTitle:@"Confirm like" detailTitle:@"Show alert when you click the like button to confirm the like" key:@"like_confirm" defaultValue:false changeAction:nil];
