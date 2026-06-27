@@ -1,0 +1,102 @@
+name: Create Plus for TikTok app
+
+on:
+  workflow_dispatch:
+    inputs:
+
+      ipa_url:
+        description: "URL to the decrypted IPA file"
+        default: ""
+        required: true
+        type: string
+
+      display_name:
+        description: "App Name (Optional)"
+        default: "TikTok"
+        required: true
+        type: string
+
+      bundle_id:
+        description: "BundleID (Optional)"
+        default: "com.ss.iphone.ugc.Ame"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Main
+        uses: actions/checkout@v4.1.1
+        with:
+          path: main
+          submodules: false
+
+      - name: Hide sensitive inputs
+        uses: levibostian/action-hide-sensitive-inputs@v1
+        with:
+          exclude_inputs: display_name,bundle_id
+
+      - name: Download and validate IPA
+        run: |
+          wget "${{ inputs.ipa_url }}" --no-verbose -O ${{ github.workspace }}/tiktok.ipa
+
+          file_type=$(file --mime-type -b ${{ github.workspace }}/tiktok.ipa)
+
+          if [[ "$file_type" != "application/x-ios-app" && "$file_type" != "application/zip" ]]; then
+            echo "::error::Validation failed: The downloaded file is not a valid IPA. Detected type: $file_type."
+            exit 1
+          fi
+
+      - name: Install Dependencies
+        run: brew install make ldid
+
+      - name: Set PATH environment variable
+        run: echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
+
+      - name: Install cyan
+        run: pipx install --force https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
+
+      - name: Download Plus for TikTok
+        id: download_plus
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          api_url="https://api.github.com/repos/raulsaeed/BHTikTokPlusPlus/releases/latest"
+
+          # Workaround
+          curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "$api_url" > /dev/null
+
+          response=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "$api_url")
+          tag_name=$(echo "$response" | jq -r '.tag_name')
+          deb_url=$(echo "$response" | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url' | head -n 1)
+          if [[ "$deb_url" == "null" || -z "$deb_url" ]]; then
+            echo "::error::Failed to get tweak URL from Github API"
+            exit 1
+          fi
+
+          echo "PLUS_TAG=$tag_name" >> $GITHUB_ENV
+          echo "Downloading: $deb_url"
+          wget "$deb_url" --no-verbose -O ${{ github.workspace }}/plus_tiktok.deb
+
+      - name: Inject tweaks into IPA
+        run: cyan -i tiktok.ipa -o Plus_TikTok_${{ env.PLUS_TAG }}.ipa -uwef plus_tiktok.deb -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }} -s
+
+      - uses: softprops/action-gh-release@v2.0.1
+        with:
+          tag_name: plus_tiktok-${{ env.PLUS_TAG }}
+          name: Plus_TikTok ${{ env.PLUS_TAG }}
+          files: Plus_TikTok_${{ env.PLUS_TAG }}.ipa
+          draft: true
+
+      - name: Output Release URL
+        run: |
+          echo "::notice::Release available at: https://github.com/${{ github.repository }}/releases"
